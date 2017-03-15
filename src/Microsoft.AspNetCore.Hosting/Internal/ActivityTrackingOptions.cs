@@ -5,8 +5,14 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 {
     public class ActivityTrackingOptions
     {
+        /// <summary>
+        /// Gets or sets request header name to use as Parent ID for activity.
+        /// </summary>
         public string RequestIdHeaderName { get; set; } = "Request-Id";
 
+        /// <summary>
+        /// Gets or sets request header name that contains comma separated list of baggage key-value pairs.
+        /// </summary>
         public string BaggageHeaderName { get; set; } = "Correlation-Context";
     }
 }

@@ -51,6 +51,48 @@ namespace Microsoft.AspNetCore.Hosting.Tests
         }
 
         [Fact]
+        public void ActivityIsStoppedDuringEndRequestCall()
+        {
+            var diagnosticSource = new DiagnosticListener("DummySource");
+            var hostingApplication = CreateApplication(out var features, diagnosticSource: diagnosticSource);
+
+            bool endCalled = false;
+            diagnosticSource.Subscribe(new CallbackDiagnosticListener(pair =>
+            {
+                if (pair.Key == "Microsoft.AspNetCore.Hosting.EndRequest")
+                {
+                    endCalled = true;
+                    Assert.Null(Activity.Current);
+                }
+            }));
+
+            var context = hostingApplication.CreateContext(features);
+            hostingApplication.DisposeContext(context, null);
+            Assert.True(endCalled);
+        }
+
+        [Fact]
+        public void ActivityIsStoppedDuringUnhandledExceptionCall()
+        {
+            var diagnosticSource = new DiagnosticListener("DummySource");
+            var hostingApplication = CreateApplication(out var features, diagnosticSource: diagnosticSource);
+
+            bool endCalled = false;
+            diagnosticSource.Subscribe(new CallbackDiagnosticListener(pair =>
+            {
+                if (pair.Key == "Microsoft.AspNetCore.Hosting.EndRequest")
+                {
+                    endCalled = true;
+                    Assert.Null(Activity.Current);
+                }
+            }));
+
+            var context = hostingApplication.CreateContext(features);
+            hostingApplication.DisposeContext(context, null);
+            Assert.True(endCalled);
+        }
+
+        [Fact]
         public void ActivityIsAvailibleDuringRequest()
         {
             var hostingApplication = CreateApplication(out var features);
@@ -95,12 +137,9 @@ namespace Microsoft.AspNetCore.Hosting.Tests
                 }
             });
             hostingApplication.CreateContext(features);
+
             Assert.Equal("Microsoft.AspNetCore.Hosting.Activity", Activity.Current.OperationName);
             Assert.Equal("ParentId1", Activity.Current.ParentId);
-            foreach (var c in Activity.Current.Baggage)
-            {
-                Console.WriteLine(c);
-            }
             Assert.Contains(Activity.Current.Baggage, pair => pair.Key == "Key1" && pair.Value == "value1");
             Assert.Contains(Activity.Current.Baggage, pair => pair.Key == "Key2" && pair.Value == "value2");
         }
