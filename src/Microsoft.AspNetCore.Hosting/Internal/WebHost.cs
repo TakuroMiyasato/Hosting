@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.StackTrace.Sources;
 
 namespace Microsoft.AspNetCore.Hosting.Internal
@@ -109,7 +110,8 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             _hostedServiceExecutor = _applicationServices.GetRequiredService<HostedServiceExecutor>();
             var diagnosticSource = _applicationServices.GetRequiredService<DiagnosticSource>();
             var httpContextFactory = _applicationServices.GetRequiredService<IHttpContextFactory>();
-            Server.Start(new HostingApplication(_application, _logger, diagnosticSource, httpContextFactory));
+            var activityTrackingOptions = _applicationServices.GetRequiredService<IOptions<ActivityTrackingOptions>>();
+            Server.Start(new HostingApplication(_application, _logger, diagnosticSource, httpContextFactory, activityTrackingOptions));
 
             // Fire IApplicationLifetime.Started
             _applicationLifetime?.NotifyStarted();

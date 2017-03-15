@@ -9,11 +9,17 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
+using Microsoft.Net.Http.Headers;
 
 namespace Microsoft.AspNetCore.Hosting.Internal
 {
     public class HostingApplication : IHttpApplication<HostingApplication.Context>
     {
+#if NETSTANDARD2_0
+        private const string ActivityName = "Microsoft.AspNetCore.Hosting.Activity";
+#endif
         private const string DiagnosticsBeginRequestKey = "Microsoft.AspNetCore.Hosting.BeginRequest";
         private const string DiagnosticsEndRequestKey = "Microsoft.AspNetCore.Hosting.EndRequest";
         private const string DiagnosticsUnhandledExceptionKey = "Microsoft.AspNetCore.Hosting.UnhandledException";
@@ -24,22 +30,26 @@ namespace Microsoft.AspNetCore.Hosting.Internal
         private readonly ILogger _logger;
         private readonly DiagnosticSource _diagnosticSource;
         private readonly IHttpContextFactory _httpContextFactory;
+        private readonly ActivityTrackingOptions _activityTrackingOptions;
 
         public HostingApplication(
             RequestDelegate application,
             ILogger logger,
             DiagnosticSource diagnosticSource,
-            IHttpContextFactory httpContextFactory)
+            IHttpContextFactory httpContextFactory,
+            IOptions<ActivityTrackingOptions> activityTrackingOptions)
         {
             _application = application;
             _logger = logger;
             _diagnosticSource = diagnosticSource;
             _httpContextFactory = httpContextFactory;
+            _activityTrackingOptions = activityTrackingOptions.Value;
         }
 
         // Set up the request
         public Context CreateContext(IFeatureCollection contextFeatures)
         {
+            var context = new Context();
             var httpContext = _httpContextFactory.Create(contextFeatures);
 
             // These enabled checks are virtual dispatch and used twice and so cache to locals
@@ -64,21 +74,65 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                 // Non-inline
                 LogRequestStarting(httpContext);
             }
-
             if (diagnoticsEnabled)
             {
+#if NETSTANDARD2_0
+                context.Activity = StartActivity(httpContext);
+#endif
                 // Non-inline
                 RecordBeginRequestDiagnostics(httpContext, startTimestamp);
             }
 
-            // Create and return the request Context
-            return new Context
-            {
-                HttpContext = httpContext,
-                Scope = scope,
-                StartTimestamp = startTimestamp,
-            };
+            // Fill and return the request Context
+            context.HttpContext = httpContext;
+            context.Scope = scope;
+            context.StartTimestamp = startTimestamp;
+            return context;
         }
+
+#if NETSTANDARD2_0
+        private Activity StartActivity(HttpContext httpContext)
+        {
+            var activity = new Activity(ActivityName);
+            StringValues requestId;
+            if (httpContext.Request.Headers.TryGetValue(_activityTrackingOptions.RequestIdHeaderName, out requestId))
+            {
+                try
+                {
+                    activity.SetParentId(requestId);
+                }
+                catch (ArgumentException ex)
+                {
+                    _logger.LogWarning(0, ex, "Request ID is invalid '{RequestId}", requestId);
+                }
+
+                // We expect baggage to be empty by default
+                // Only very advanced users will be using it in near future, we encouradge them to keep baggage small (few items)
+                string[] baggage = httpContext.Request.Headers.GetCommaSeparatedValues(_activityTrackingOptions.BaggageHeaderName);
+                if (baggage != StringValues.Empty)
+                {
+                    foreach (var item in baggage)
+                    {
+                        NameValueHeaderValue baggageItem;
+                        if (NameValueHeaderValue.TryParse(item, out baggageItem))
+                        {
+                            try
+                            {
+                                activity.AddBaggage(baggageItem.Name, baggageItem.Value);
+                            }
+                            catch (ArgumentException ex)
+                            {
+                                _logger.LogWarning(0, ex, "Invalid baggage item '{ItemName}' with value '{ItemValue}'", baggageItem.Name, baggageItem.Value);
+                            }
+                        }
+                    }
+                }
+            }
+
+            activity.Start();
+            return activity;
+        }
+#endif
 
         // Execute the request
         public Task ProcessRequestAsync(Context context)
@@ -97,6 +151,13 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 
             // If startTimestamp is 0, don't call GetTimestamp, likely don't need the value
             var currentTimestamp = (startTimestamp != 0) ? Stopwatch.GetTimestamp() : 0;
+
+#if NETSTANDARD2_0
+            // TODO: Ability to set duration directly or set end time from timestamp
+            context.Activity?
+                .SetEndTime(DateTime.UtcNow)
+                .Stop();
+#endif
 
             // To keep the hot path short we defer logging to non-inlines
             if (exception == null)
@@ -228,6 +289,11 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             public HttpContext HttpContext { get; set; }
             public IDisposable Scope { get; set; }
             public long StartTimestamp { get; set; }
+
+#if NETSTANDARD2_0
+            public Activity Activity { get; set; }
+#endif
+
         }
     }
 }

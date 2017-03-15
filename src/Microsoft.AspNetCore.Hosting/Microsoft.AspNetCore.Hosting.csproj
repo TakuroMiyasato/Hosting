@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <Description>ASP.NET Core hosting infrastructure and startup logic for web applications.</Description>
-    <TargetFrameworks>net451;netstandard1.3;netstandard1.5</TargetFrameworks>
+    <TargetFrameworks>net451;netstandard1.3;netstandard1.5;netstandard2.0</TargetFrameworks>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>aspnetcore;hosting</PackageTags>
@@ -29,7 +29,7 @@
     <PackageReference Include="Microsoft.Extensions.RuntimeEnvironment.Sources" Version="$(AspNetCoreVersion)" PrivateAssets="All"/>
     <PackageReference Include="Microsoft.Extensions.StackTrace.Sources" Version="$(AspNetCoreVersion)" PrivateAssets="All"/>
     <PackageReference Include="Microsoft.Extensions.TypeNameHelper.Sources" Version="$(AspNetCoreVersion)" PrivateAssets="All"/>
-    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(CoreFxVersion)" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.0-*" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
   </ItemGroup>
 
@@ -37,8 +37,12 @@
     <PackageReference Include="System.Diagnostics.StackTrace" Version="$(CoreFxVersion)" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.5' OR '$(TargetFramework)' == 'netstandard2.0' ">
     <PackageReference Include="System.Runtime.Loader" Version="$(CoreFxVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' ">
+    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.4.0-*" />
   </ItemGroup>
 
   <ItemGroup>
