@@ -17,7 +17,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 {
     public class HostingApplication : IHttpApplication<HostingApplication.Context>
     {
-#if NETSTANDARD2_0
+#if !NET451
         private const string ActivityName = "Microsoft.AspNetCore.Hosting.Activity";
 #endif
         private const string DiagnosticsBeginRequestKey = "Microsoft.AspNetCore.Hosting.BeginRequest";
@@ -76,7 +76,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             }
             if (diagnoticsEnabled)
             {
-#if NETSTANDARD2_0
+#if !NET451
                 context.Activity = StartActivity(httpContext);
 #endif
                 // Non-inline
@@ -90,7 +90,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             return context;
         }
 
-#if NETSTANDARD2_0
+#if !NET451
         private Activity StartActivity(HttpContext httpContext)
         {
             var activity = new Activity(ActivityName);
@@ -103,7 +103,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                 }
                 catch (ArgumentException ex)
                 {
-                    _logger.LogWarning(0, ex, "Request ID is invalid '{RequestId}", requestId);
+                    _logger.LogWarning(0, ex, "Request ID received in '{RequestIdHeaderName}' header is invalid '{RequestId}'", _activityTrackingOptions.RequestIdHeaderName, requestId);
                 }
 
                 // We expect baggage to be empty by default
@@ -122,7 +122,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                             }
                             catch (ArgumentException ex)
                             {
-                                _logger.LogWarning(0, ex, "Invalid baggage item '{ItemName}' with value '{ItemValue}'", baggageItem.Name, baggageItem.Value);
+                                _logger.LogWarning(0, ex, "Baggage item received in '{BaggageHeaderName}' header is invalid '{ItemName}' with value '{ItemValue}'", _activityTrackingOptions.BaggageHeaderName, baggageItem.Name, baggageItem.Value);
                             }
                         }
                     }
@@ -152,11 +152,11 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             // If startTimestamp is 0, don't call GetTimestamp, likely don't need the value
             var currentTimestamp = (startTimestamp != 0) ? Stopwatch.GetTimestamp() : 0;
 
-#if NETSTANDARD2_0
-            // TODO: Ability to set duration directly or set end time from timestamp
+#if !NET451
+            var timeSpan = new TimeSpan(currentTimestamp - startTimestamp);
+            var endTimeUtc = context.Activity.StartTimeUtc.Add(timeSpan);
             context.Activity?
-                .SetEndTime(DateTime.UtcNow)
-                .Stop();
+                .SetEndTime(endTimeUtc);
 #endif
 
             // To keep the hot path short we defer logging to non-inlines
@@ -192,6 +192,11 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                 }
             }
 
+#if !NET451
+            // TODO: Ability to set duration directly or set end time from timestamp
+            context.Activity?.Stop();
+#endif
+                
             // If startTimestamp was 0, then Information logging wasn't enabled at for this request (and calcuated time will be wildly wrong)
             // Is used as proxy to reduce calls to virtual: _logger.IsEnabled(LogLevel.Information)
             if (startTimestamp != 0)
@@ -290,10 +295,9 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             public IDisposable Scope { get; set; }
             public long StartTimestamp { get; set; }
 
-#if NETSTANDARD2_0
+#if !NET451
             public Activity Activity { get; set; }
 #endif
-
         }
     }
 }

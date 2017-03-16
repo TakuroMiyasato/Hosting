@@ -28,7 +28,7 @@ namespace Microsoft.AspNetCore.Hosting.Tests
             hostingApplication.DisposeContext(context, null);
         }
 
-#if NETCOREAPP2_0
+#if !NET452
         [Fact]
         public void ActivityIsAvailibleDuringBeginRequestCall()
         {
@@ -62,7 +62,9 @@ namespace Microsoft.AspNetCore.Hosting.Tests
                 if (pair.Key == "Microsoft.AspNetCore.Hosting.EndRequest")
                 {
                     endCalled = true;
-                    Assert.Null(Activity.Current);
+                    Assert.NotNull(Activity.Current);
+                    Assert.True(Activity.Current.Duration > TimeSpan.Zero);
+                    Assert.Equal("Microsoft.AspNetCore.Hosting.Activity", Activity.Current.OperationName);
                 }
             }));
 
@@ -83,7 +85,9 @@ namespace Microsoft.AspNetCore.Hosting.Tests
                 if (pair.Key == "Microsoft.AspNetCore.Hosting.EndRequest")
                 {
                     endCalled = true;
-                    Assert.Null(Activity.Current);
+                    Assert.NotNull(Activity.Current);
+                    Assert.True(Activity.Current.Duration > TimeSpan.Zero);
+                    Assert.Equal("Microsoft.AspNetCore.Hosting.Activity", Activity.Current.OperationName);
                 }
             }));
 
