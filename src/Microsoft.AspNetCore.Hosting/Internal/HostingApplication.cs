@@ -153,10 +153,13 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             var currentTimestamp = (startTimestamp != 0) ? Stopwatch.GetTimestamp() : 0;
 
 #if !NET451
-            var timeSpan = new TimeSpan(currentTimestamp - startTimestamp);
-            var endTimeUtc = context.Activity.StartTimeUtc.Add(timeSpan);
-            context.Activity?
-                .SetEndTime(endTimeUtc);
+            var activity = context.Activity;
+            if (activity != null)
+            {
+                var timeSpan = new TimeSpan(currentTimestamp - startTimestamp);
+                var endTimeUtc = context.Activity.StartTimeUtc.Add(timeSpan);
+                context.Activity.SetEndTime(endTimeUtc);
+            }
 #endif
 
             // To keep the hot path short we defer logging to non-inlines
@@ -193,10 +196,12 @@ namespace Microsoft.AspNetCore.Hosting.Internal
             }
 
 #if !NET451
-            // TODO: Ability to set duration directly or set end time from timestamp
-            context.Activity?.Stop();
+            if (activity != null)
+            {
+                context.Activity.Stop();
+            }
 #endif
-                
+
             // If startTimestamp was 0, then Information logging wasn't enabled at for this request (and calcuated time will be wildly wrong)
             // Is used as proxy to reduce calls to virtual: _logger.IsEnabled(LogLevel.Information)
             if (startTimestamp != 0)
