@@ -15,5 +15,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
         public const int ApplicationStoppedException = 8;
         public const int HostedServiceStartException = 9;
         public const int HostedServiceStopException = 10;
+        public const int BadRequestIdHeader = 11;
+        public const int BadBaggageHeader = 12;
     }
 }

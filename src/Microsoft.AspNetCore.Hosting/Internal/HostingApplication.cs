@@ -103,7 +103,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                 }
                 catch (ArgumentException ex)
                 {
-                    _logger.LogWarning(0, ex, "Request ID received in '{RequestIdHeaderName}' header is invalid '{RequestId}'", _activityTrackingOptions.RequestIdHeaderName, requestId);
+                    _logger.LogWarning(LoggerEventIds.BadRequestIdHeader, ex, "Request ID received in '{RequestIdHeaderName}' header is invalid '{RequestId}'", _activityTrackingOptions.RequestIdHeaderName, requestId);
                 }
 
                 // We expect baggage to be empty by default
@@ -122,7 +122,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                             }
                             catch (ArgumentException ex)
                             {
-                                _logger.LogWarning(0, ex, "Baggage item received in '{BaggageHeaderName}' header is invalid '{ItemName}' with value '{ItemValue}'", _activityTrackingOptions.BaggageHeaderName, baggageItem.Name, baggageItem.Value);
+                                _logger.LogWarning(LoggerEventIds.BadRequestIdHeader, ex, "Baggage item received in '{BaggageHeaderName}' header is invalid '{ItemName}' with value '{ItemValue}'", _activityTrackingOptions.BaggageHeaderName, baggageItem.Name, baggageItem.Value);
                             }
                         }
                     }
