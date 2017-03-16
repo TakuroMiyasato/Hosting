@@ -30,7 +30,6 @@
     <PackageReference Include="Microsoft.Web.Administration" Version="$(WebAdministrationVersion)" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Net.Http" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
