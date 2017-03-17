@@ -54,6 +54,7 @@ namespace Microsoft.AspNetCore.Hosting.Internal
 
             // These enabled checks are virtual dispatch and used twice and so cache to locals
             var diagnoticsEnabled = _diagnosticSource.IsEnabled(DiagnosticsBeginRequestKey);
+
             var loggingEnabled = _logger.IsEnabled(LogLevel.Information);
 
             if (HostingEventSource.Log.IsEnabled())
@@ -128,7 +129,10 @@ namespace Microsoft.AspNetCore.Hosting.Internal
                     }
                 }
             }
-
+            if (_diagnosticSource.IsEnabled(DiagnosticsBeginRequestKey, activity, httpContext))
+            {
+                return null;
+            }
             activity.Start();
             return activity;
         }
