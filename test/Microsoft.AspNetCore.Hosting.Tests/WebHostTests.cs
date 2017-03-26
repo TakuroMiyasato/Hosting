@@ -67,11 +67,13 @@ namespace Microsoft.AspNetCore.Hosting
         }
 
         [Fact]
-        public void NoDefaultAddressesIfNotConfigured()
+        public void NoDefaultAddressesAndDoNotPreferHostingUrlsIfNotConfigured()
         {
             var host = CreateBuilder().UseServer(this).Build();
             host.Start();
-            Assert.Equal(false, host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.Any());
+            var serverAddressesFeature = host.ServerFeatures.Get<IServerAddressesFeature>();
+            Assert.False(serverAddressesFeature.Addresses.Any());
+            Assert.False(serverAddressesFeature.PreferHostingUrls);
         }
 
         [Fact]
@@ -118,6 +120,29 @@ namespace Microsoft.AspNetCore.Hosting
             var host = CreateBuilder(config).UseServer(this).Build();
             host.Start();
             Assert.Equal("http://localhost:5009", host.ServerFeatures.Get<IServerAddressesFeature>().Addresses.First());
+        }
+
+        [Fact]
+        public void DoNotPreferHostingUrlsWhenNoAddressConfigured()
+        {
+            var host = CreateBuilder().UseServer(this).PreferHostingUrls().Build();
+            host.Start();
+            Assert.False(host.ServerFeatures.Get<IServerAddressesFeature>().PreferHostingUrls);
+        }
+
+        [Fact]
+        public void PreferHostingUrlsWhenAddressIsConfigured()
+        {
+            var data = new Dictionary<string, string>
+            {
+                { "urls", "http://localhost:5003" }
+            };
+
+            var config = new ConfigurationBuilder().AddInMemoryCollection(data).Build();
+
+            var host = CreateBuilder(config).UseServer(this).PreferHostingUrls().Build();
+            host.Start();
+            Assert.True(host.ServerFeatures.Get<IServerAddressesFeature>().PreferHostingUrls);
         }
 
         [Fact]

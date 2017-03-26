@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ObjectPool;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.AspNetCore.Hosting.Server;
 
 namespace Microsoft.AspNetCore.Hosting
 {
@@ -32,6 +33,7 @@ namespace Microsoft.AspNetCore.Hosting
         private ILoggerFactory _loggerFactory;
         private WebHostOptions _options;
         private bool _webHostBuilt;
+        private bool _preferHostingUrls;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WebHostBuilder"/> class.
@@ -132,6 +134,16 @@ namespace Microsoft.AspNetCore.Hosting
         }
 
         /// <summary>
+        /// Indicate that the host should listen on the urls configured on the <see cref="IWebHostBuilder"/> instead of those configured on the <see cref="IServer"/>.
+        /// </summary>
+        /// <returns>The <see cref="IWebHostBuilder"/>.</returns>
+        public IWebHostBuilder PreferHostingUrls()
+        {
+            _preferHostingUrls = true;
+            return this;
+        }
+
+        /// <summary>
         /// Builds the required services and an <see cref="IWebHost"/> which hosts a web application.
         /// </summary>
         public IWebHost Build()
@@ -180,7 +192,10 @@ namespace Microsoft.AspNetCore.Hosting
         {
             hostingStartupErrors = null;
 
-            _options = new WebHostOptions(_config);
+            _options = new WebHostOptions(_config)
+            {
+                PreferHostingUrls = _preferHostingUrls
+            };
 
             var appEnvironment = PlatformServices.Default.Application;
             var contentRootPath = ResolveContentRootPath(_options.ContentRootPath, appEnvironment.ApplicationBasePath);

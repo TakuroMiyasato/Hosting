@@ -4,6 +4,7 @@
 using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting.Server;
 
 namespace Microsoft.AspNetCore.Hosting
 {
@@ -45,6 +46,12 @@ namespace Microsoft.AspNetCore.Hosting
         /// <param name="value">The value of the setting to add or replace.</param>
         /// <returns>The <see cref="IWebHostBuilder"/>.</returns>
         IWebHostBuilder UseSetting(string key, string value);
+
+        /// <summary>
+        /// Indicate that the host should listen on the urls configured on the <see cref="IWebHostBuilder"/> instead of those configured on the <see cref="IServer"/>.
+        /// </summary>
+        /// <returns>The <see cref="IWebHostBuilder"/>.</returns>
+        IWebHostBuilder PreferHostingUrls();
 
         /// <summary>
         /// Get the setting value from the configuration.

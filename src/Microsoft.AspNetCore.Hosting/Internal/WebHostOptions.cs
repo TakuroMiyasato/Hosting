@@ -39,12 +39,14 @@ namespace Microsoft.AspNetCore.Hosting.Internal
         public bool CaptureStartupErrors { get; set; }
 
         public string Environment { get; set; }
-        
+
         public string StartupAssembly { get; set; }
 
         public string WebRoot { get; set; }
 
         public string ContentRootPath { get; set; }
+
+        public bool PreferHostingUrls { get; set; }
 
         private static bool ParseBool(IConfiguration configuration, string key)
         {

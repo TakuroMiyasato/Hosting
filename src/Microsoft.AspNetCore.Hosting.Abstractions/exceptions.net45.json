@@ -1,0 +1,8 @@
+[
+  {
+    "OldTypeId": "public interface Microsoft.AspNetCore.Hosting.IWebHostBuilder",
+    "NewTypeId": "public interface Microsoft.AspNetCore.Hosting.IWebHostBuilder",
+    "NewMemberId": "Microsoft.AspNetCore.Hosting.IWebHostBuilder PreferHostingUrls()",
+    "Kind": "Addition"
+  }
+]
